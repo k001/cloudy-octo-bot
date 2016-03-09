@@ -35,7 +35,7 @@ var os = require('os');
 var fs = require('fs');
 
 var controller = Botkit.slackbot({
-  debug: (tokens.slack.debug)? 'debug': 'info',,
+  debug: (tokens.slack.debug)? 'debug': 'info',
   logLevel: 'debug',
   json_file_store:  '/tmp/data'
 });
