@@ -76,7 +76,7 @@ var redisStorage = require('botkit-storage-redis')(redisConfig);
 var controller = Botkit.slackbot({
   debug: tokens.slack.debug,
   logLevel: 'info',
-  storage: redisStorage
+  json_file_store:  '/tmp/data'
 });
 
 var bot = controller.spawn({
