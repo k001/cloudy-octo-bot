@@ -74,29 +74,15 @@ var redisConfig = {
 };
 var redisStorage = require('botkit-storage-redis')(redisConfig);
 var controller = Botkit.slackbot({
-  logger: new winston.Logger({
-    level: (tokens.slack.debug)? 'debug': 'info',
-    exitOnError: true,
-    transports: [
-      new (winston.transports.Console)({
-        name: 'info-console',
-        level: 'info'
-      }),
-      new (winston.transports.File)({ 
-        name: 'error-file',
-        level: 'debug',
-        filename: './bot.log' 
-      })
-    ]
-  }),
-    json_file_store:  '/tmp/data'
+  debug: tokens.slack.debug,
+  logLevel: 'info',
+  storage: redisStorage
 });
 
 var bot = controller.spawn({
   token: tokens.slack.slackToken
 }).startRTM(function(err, bot, payload) {
   console.log(payload.team.name);
-  console.log(bot.identity.name);
   for (var u in payload.users) {
     controller.storage.users.save(payload.users[u]);
   }
@@ -105,9 +91,6 @@ var bot = controller.spawn({
   }
 });
 
-bot.startPrivateConversation({user: "U03BHRA20", message: "HOLA"}, function(err, dm){
-  console.log('Inside of Private Conversation');
-});
 soSorryPhases = function(convo) {
   fs.readFile(__dirname + '/diccionary.txt', 'UTF-8', function(err, contents) {
     try {
@@ -143,7 +126,7 @@ createTicket = function(response, convo){
     u_category: convo.subcategory
   };
   convo.say('...');
-  Incident.create(data, function(err, ticket){ 
+  Incident.create(data, function(err, ticket){
     convo.say(":nerd_face: I'm still working on it");
     try {
       if (err) throw err;
@@ -194,23 +177,20 @@ controller.hears(['shutdown'],['direct_message', 'mention', 'direct_mention'],
       ]);
     });
 });
-controller.hears(['uptime', 'identify yourself', 'who are you', 
-  'what is your name'], 'direct_message,direct_mention,mention', 
+controller.hears(['uptime', 'identify yourself', 'who are you',
+  'what is your name'], 'direct_message,direct_mention,mention',
   function(bot, message) {
   var hostname = os.hostname();
   var uptime = formatUptime(process.uptime());
-  bot.replyWithTyping(message, ':robot_face: I am a bot named <@' + bot.identity.name + 
+  bot.reply(message, ':robot_face: I am a bot named <@' + bot.identity.name +
     '>. I have been running for `' + uptime + '` on `' + hostname + "`.");
 });
-controller.hears('.*', ['direct_message', 'direct_mention', 'mention'], 
+controller.hears('.*', ['direct_message', 'direct_mention', 'mention'],
   function(bot, message) {
-    controller.storage.users.get(message.user, function(err, user){
-      controller.logger.log('info', "┌────────────────────────────────┐");
-      controller.logger.log('info', "| I'm chatting with " + user.name);
-      controller.logger.log('info', "└────────────────────────────────┘");
-    });
-    witbot.process(message.text, bot, message);
+  witbot.process(message.text, bot, message);
 });
+
+
 witbot.hears('how_are_you', 0.5, function(bot, message, outcome) {
   bot.api.reactions.add({
     timestamp: message.ts,
@@ -246,7 +226,7 @@ witbot.hears('call_me', 0.5, function(bot, message, outcome) {
       sorry!');
       return;
     }
-    bot.reply(message, 'Got it. I will call you *' + user.name + 
+    bot.reply(message, 'Got it. I will call you *' + user.name +
       '* from now on.');
   });
 });
@@ -282,7 +262,7 @@ witbot.hears('access', 0.5, function(bot, message, outcome){
     multiple: false
   };
   bot.startConversation(message, function(response, convo){
-    convo.ask("*_• Are you sure to request access to the Account:_* "+ 
+    convo.ask("*_• Are you sure to request access to the Account:_* "+
       outcome.entities.acct[0].value, [{
       pattern: bot.utterances.yes,
       callback: function(response, convo){
@@ -307,23 +287,20 @@ witbot.hears('access', 0.5, function(bot, message, outcome){
     }], capture_options);
   });
 });
+
 witbot.hears('search', 0.5, function(bot, message, outcome){
   if (!outcome.entities.search_query || outcome.entities.search_query.lenght === 0) {
     bot.reply(message, 'Ups nothing found!');
     return;
   }
-  controller.logger.log('debug', outcome);
   var term = outcome.entities.search_query[0].value;
   var Client  = require('node-rest-client').Client;
   var options_auth = {user: tokens.attsn.username, password: tokens.attsn.password};
   var client = new Client(options_auth);
   var host = 'https://'+tokens.attsn.hostname;
-  var query = host+"/rest/api/content/search?cql=type=page%20and%20space=EADPSE%20and\
- (label=%22"+term+"%22%20or%20title~%22"+term+"%22)&limit=5";
-  controller.logger.log('info', query);
-  client.get(query, function(data, response){
-    bot.reply(message, "Sure, I'm searching `"+ term +"` :nerd_face:"); 
-    controller.logger.log('info', data);
+  client.get(host+"/rest/api/content/search?cql=type=page%20and%20space=EADPSE%20and\
+    %20text%20~%22"+term+"%22%20or%20title~%22"+term+"%22&limit=5", function(data, response){
+    bot.reply(message, "Sure, I'm searching `"+ term +"` :nerd_face:");
     if(data.results.length <= 0) {
       bot.startConversation(message, function(response, convo, outcome){
         soSorryPhases(convo);
@@ -331,19 +308,19 @@ witbot.hears('search', 0.5, function(bot, message, outcome){
       });
       return;
     }
+    bot.reply(message, '...');
     data.results.forEach(function(elem, array, index){
       var reply_with_attachments = {
           'attachments': [
             {
               'color': '#7CD197',
-              'fallback' : '<'+host+elem._links.tinyui+'|'+host+elem._links.tinyui +'>',
+              'fallback' : '<'+host+elem._links.tinyui+'|'+host+elem._links.tinyui,
               'title': '...'+elem._links.webui,
               'title_link': host+elem._links.tinyui
             }
           ]
       };
-      controller.logger.log('info', reply_with_attachments);
-      bot.reply(message, reply_with_attachments);  
+      bot.reply(message, reply_with_attachments);
     });
   }).on('error', function(err){
     bot.reply(message, "`Sorry, at the moment, I cannot connect to Atlassian, please try later` :-1::skin-tone-3: :sadpanda:");
@@ -363,10 +340,10 @@ askRequestAccess = function(response, convo, outcome){
 awsContactingManager = function(response, convo) {
   var accountId = convo.account;
   console.log(accountId);
-  var AWS = require('aws-sdk'); 
+  var AWS = require('aws-sdk');
   AWS.config = new AWS.Config({
-      accessKeyId:tokens.aws.keyId, 
-      secretAccessKey: tokens.aws.accessKey, 
+      accessKeyId:tokens.aws.keyId,
+      secretAccessKey: tokens.aws.accessKey,
       region: tokens.aws.region
   });
   var docClient = new AWS.DynamoDB.DocumentClient();
@@ -519,7 +496,7 @@ askEACategory = function(response, convo) {
       var tres = 'Access > Login not recognized';
       var cuatro = 'Access > Other';
       var cinco = 'Access > Redirected unexpectedly';
-      var message_string = "1. `" + uno + "` \n\ 2. `" + dos + "` \n\ 3. `" + 
+      var message_string = "1. `" + uno + "` \n\ 2. `" + dos + "` \n\ 3. `" +
       tres + "` \n\ 4. `" + cuatro + "` \n\ 5. `" + cinco + "`";
       convo.say("_`Select one of the next numeric List.`_");
       convo.ask(message_string, [{
@@ -590,7 +567,7 @@ askEACategory = function(response, convo) {
       var dos = 'Functional > Insufficient permissions';
       var tres = 'Functional > Other';
       var cuatro = 'Functional > Unable to perform required action';
-      var message_string = "1. `" + uno + "` \n\ 2. `" + dos + "` \n\ 3. `" + 
+      var message_string = "1. `" + uno + "` \n\ 2. `" + dos + "` \n\ 3. `" +
       tres + "` \n\ 4. `" + cuatro + "`";
       convo.say("_`Select one of the next numeric List.`_");
       convo.ask(message_string, [{
@@ -697,7 +674,7 @@ askEACategory = function(response, convo) {
       var tres = 'Performance > Other';
       var cuatro = 'Performance > Slow response';
       var cinco = 'Performance > System unavailable';
-      var message_string = "1. `" + uno + "` \n\ 2. `" + dos + "` \n\ 3. `" + 
+      var message_string = "1. `" + uno + "` \n\ 2. `" + dos + "` \n\ 3. `" +
       tres + "` \n\ 4. `" + cuatro + "` \n\ 5. `" + cinco + "`";
       convo.say("_`Select one of the next numeric List.`_");
       convo.ask(message_string, [{
@@ -825,6 +802,21 @@ askEADescription = function(response, convo) {
     }
   }], capture_options);
 };
+
+/*
+function getAccountsId(callback) {
+   // Retrieving accounts from CIA
+
+    var dynamodb = new AWS.DynamoDB();
+
+    dynamodb.scan({TableName: 'accounts'}, function(err, data){
+        if (err) {
+        return callback(err);
+                }
+        var ids = data.Items.map(function(item) {return item.id.S; });
+        return callback(null, ids);
+    });
+}*/
 
 assumeRole = function(account, callback) {
   var accountId = account.id;
