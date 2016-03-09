@@ -4,21 +4,24 @@ config:
   - name: WIT_TOKEN
     friendly_name: The Wit.ai API WIT_TOKEN
     info: This is the wit  api token for your app on wit.ai.
+    type: secret
   - name: ACCESS_KEY
     friendly_name: The Access key Id from AWS
     info: Set the Access Key id from IAM AWS.
+    type: secret
   - name: ACCESS_KEY_ID
     friendly_name: The Access key from AWS
     info: Set the Access key from IAM AWS.
-  - name: HOSTNAME
-    friendly_name: The hostname or instance for ServiceNow
-    info: Set the FQDN or instance for ServiceNow
+    type: secret
   - name: USERNAME
     friendly_name: The username to use to connect to Service Now
     info: Set the username for Service Now
+    type: secret
   - name: PASSWORD
     friendly_name: The password connect  Service Now
     info: Set the Password for Service Now
+    type: secret
   - name: INSTANCE_NAME
     friendly_name: The instance name
     info: Set the Instance nem Service Now
+    type: secret
