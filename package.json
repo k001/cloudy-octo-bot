@@ -1,0 +1,30 @@
+{
+  "name": "sally-bot",
+  "version": "0.1.0",
+  "description": "Bot to Internal propose",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/k001/cloudy-octo-bot.git"
+  },
+  "author": "izenteno@ea.com",
+  "license": "Copyright (C) 2016.",
+  "bugs": {
+    "url": ""
+  },
+  "homepage": "https://google.com",
+  "dependencies": {
+    "aws-sdk": "^2.2.33",
+    "botkit": "0.0.7",
+    "botkit-storage-redis": "^1.0.0",
+    "node-rest-client": "^1.8.0",
+    "npm-servicenow": "0.0.1",
+    "redis": "^2.4.2",
+    "winston": "^2.1.1",
+    "witbot": "^1.0.1"
+  }
+}
