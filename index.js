@@ -89,7 +89,7 @@ var controller = Botkit.slackbot({
       })
     ]
   }),
-  storage: redisStorage
+    json_file_store:  '/tmp/data'
 });
 
 var bot = controller.spawn({
